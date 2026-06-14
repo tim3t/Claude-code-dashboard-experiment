@@ -287,7 +287,7 @@
       <div class="stat-label">Accounts</div>
     </div>
     <div class="stat">
-      <div class="stat-value" id="hd-arr">$8.5M</div>
+      <div class="stat-value" id="hd-arr">—</div>
       <div class="stat-label">Annual ARR</div>
     </div>
   </div>
@@ -328,69 +328,69 @@
   };
 
   // ─────────────────────────────────────────────────────
-  //  Accounts  (50 unique · $8.49M ARR est.)
-  //  Duplicates removed: Raytheon ×3 → 1, Comcast ×2 → 1, Walmart ×2 → 1
-  //  ARR values are estimates — update as actuals become available
+  //  Accounts  (50 unique · actual license ARR)
+  //  Combined duplicates: Raytheon ×3, Comcast ×2, Walmart ×2
   // ─────────────────────────────────────────────────────
   const ACCOUNTS = [
-    { id:  1, name: 'Northrop Grumman',           arr: 290000, industry: 'Defense & Gov',         col: 'triage' },
-    { id:  2, name: 'Lockheed Martin',             arr: 250000, industry: 'Defense & Gov',         col: 'triage' },
-    { id:  3, name: 'United States Air Force',     arr: 185000, industry: 'Defense & Gov',         col: 'triage' },
-    { id:  4, name: 'Raytheon',                    arr: 240000, industry: 'Defense & Gov',         col: 'triage' },
-    { id:  5, name: 'Dell Technologies',           arr: 225000, industry: 'Technology',            col: 'triage' },
-    { id:  6, name: 'Cisco Systems',               arr: 220000, industry: 'Technology',            col: 'triage' },
-    { id:  7, name: 'U.S. Navy',                   arr: 165000, industry: 'Defense & Gov',         col: 'triage' },
-    { id:  8, name: 'Amazon (Europe)',             arr: 175000, industry: 'Technology',            col: 'triage' },
-    { id:  9, name: 'AMD',                         arr: 145000, industry: 'Technology',            col: 'triage' },
-    { id: 10, name: 'General Motors',              arr: 160000, industry: 'Automotive',            col: 'triage' },
-    { id: 11, name: 'Nielsen',                     arr: 120000, industry: 'Professional Services', col: 'triage' },
-    { id: 12, name: 'Morgan Stanley',              arr: 225000, industry: 'Financial Services',    col: 'triage' },
-    { id: 13, name: 'IBM',                         arr: 280000, industry: 'Technology',            col: 'triage' },
-    { id: 14, name: 'Bank of America',             arr: 305000, industry: 'Financial Services',    col: 'triage' },
-    { id: 15, name: 'Collins Aerospace',           arr: 175000, industry: 'Aerospace',             col: 'triage' },
-    { id: 16, name: 'HPE',                         arr: 175000, industry: 'Technology',            col: 'triage' },
-    { id: 17, name: 'Walmart',                     arr: 260000, industry: 'Retail & Consumer',     col: 'triage' },
-    { id: 18, name: 'T-Mobile USA',                arr: 155000, industry: 'Telecom & Media',       col: 'triage' },
-    { id: 19, name: 'Comcast',                     arr: 180000, industry: 'Telecom & Media',       col: 'triage' },
-    { id: 20, name: 'Tesla',                       arr: 145000, industry: 'Automotive',            col: 'triage' },
-    { id: 21, name: 'US Dept of Agriculture',      arr: 130000, industry: 'Defense & Gov',         col: 'triage' },
-    { id: 22, name: 'Sony Corporation of America', arr: 145000, industry: 'Telecom & Media',       col: 'triage' },
-    { id: 23, name: 'CrowdStrike',                 arr: 140000, industry: 'Technology',            col: 'triage' },
-    { id: 24, name: 'Express Scripts',             arr: 130000, industry: 'Healthcare',            col: 'triage' },
-    { id: 25, name: 'SpaceX',                      arr: 135000, industry: 'Aerospace',             col: 'triage' },
-    { id: 26, name: 'Verizon',                     arr: 220000, industry: 'Telecom & Media',       col: 'triage' },
-    { id: 27, name: 'Palantir Technologies',       arr: 155000, industry: 'Technology',            col: 'triage' },
-    { id: 28, name: 'U.S. Army',                   arr: 175000, industry: 'Defense & Gov',         col: 'triage' },
-    { id: 29, name: 'General Dynamics IT (GDIT)',  arr: 200000, industry: 'Defense & Gov',         col: 'triage' },
-    { id: 30, name: 'Verisk Analytics',            arr: 120000, industry: 'Financial Services',    col: 'triage' },
-    { id: 31, name: 'Desjardins Technology Group', arr: 115000, industry: 'Financial Services',    col: 'triage' },
-    { id: 32, name: 'AT&T Services',               arr: 220000, industry: 'Telecom & Media',       col: 'triage' },
-    { id: 33, name: 'Samsung Electronics',         arr: 150000, industry: 'Technology',            col: 'triage' },
-    { id: 34, name: 'Discover Financial Services', arr: 125000, industry: 'Financial Services',    col: 'triage' },
-    { id: 35, name: 'Kaiser Permanente',           arr: 155000, industry: 'Healthcare',            col: 'triage' },
-    { id: 36, name: 'Red Hat',                     arr: 145000, industry: 'Technology',            col: 'triage' },
-    { id: 37, name: 'Spotify',                     arr: 110000, industry: 'Telecom & Media',       col: 'triage' },
-    { id: 38, name: 'FIS Global',                  arr: 135000, industry: 'Financial Services',    col: 'triage' },
-    { id: 39, name: 'US Dept of Energy',           arr: 130000, industry: 'Defense & Gov',         col: 'triage' },
-    { id: 40, name: 'FBI',                         arr: 120000, industry: 'Defense & Gov',         col: 'triage' },
-    { id: 41, name: 'Applied Materials',           arr: 140000, industry: 'Technology',            col: 'triage' },
-    { id: 42, name: 'AbbVie',                      arr: 155000, industry: 'Healthcare',            col: 'triage' },
-    { id: 43, name: 'Mutual of Omaha',             arr: 110000, industry: 'Financial Services',    col: 'triage' },
-    { id: 44, name: 'SAS Institute',               arr: 130000, industry: 'Technology',            col: 'triage' },
-    { id: 45, name: 'The Kroger Company',          arr: 135000, industry: 'Retail & Consumer',     col: 'triage' },
-    { id: 46, name: 'PNC',                         arr: 140000, industry: 'Financial Services',    col: 'triage' },
-    { id: 47, name: 'Google',                      arr: 330000, industry: 'Technology',            col: 'triage' },
-    { id: 48, name: 'Cyberspace',                  arr:  95000, industry: 'Defense & Gov',         col: 'triage' },
-    { id: 49, name: 'FISERV',                      arr: 130000, industry: 'Financial Services',    col: 'triage' },
-    { id: 50, name: 'Maryland Procurement Office', arr:  90000, industry: 'Defense & Gov',         col: 'triage' },
+    { id:  1, name: 'Northrop Grumman',           arr:  838604.91, industry: 'Defense & Gov',         col: 'triage' },
+    { id:  2, name: 'Lockheed Martin',             arr:  665533.34, industry: 'Defense & Gov',         col: 'triage' },
+    { id:  3, name: 'United States Air Force',     arr:  628674.84, industry: 'Defense & Gov',         col: 'triage' },
+    { id:  4, name: 'Raytheon',                    arr:  529987.08, industry: 'Defense & Gov',         col: 'triage' },
+    { id:  5, name: 'Dell Technologies',           arr:  313895.50, industry: 'Technology',            col: 'triage' },
+    { id:  6, name: 'Cisco Systems',               arr:  278583.20, industry: 'Technology',            col: 'triage' },
+    { id:  7, name: 'U.S. Navy',                   arr:  259560.24, industry: 'Defense & Gov',         col: 'triage' },
+    { id:  8, name: 'Amazon (Europe)',             arr:  230596.75, industry: 'Technology',            col: 'triage' },
+    { id:  9, name: 'AMD',                         arr:  222603.32, industry: 'Technology',            col: 'triage' },
+    { id: 10, name: 'General Motors',              arr:  210698.00, industry: 'Automotive',            col: 'triage' },
+    { id: 11, name: 'Nielsen',                     arr:  205635.33, industry: 'Professional Services', col: 'triage' },
+    { id: 12, name: 'Morgan Stanley',              arr:  199392.75, industry: 'Financial Services',    col: 'triage' },
+    { id: 13, name: 'IBM',                         arr:  175265.75, industry: 'Technology',            col: 'triage' },
+    { id: 14, name: 'Bank of America',             arr:  161140.50, industry: 'Financial Services',    col: 'triage' },
+    { id: 15, name: 'Collins Aerospace',           arr:  154678.88, industry: 'Aerospace',             col: 'triage' },
+    { id: 16, name: 'HPE',                         arr:  143837.16, industry: 'Technology',            col: 'triage' },
+    { id: 17, name: 'Walmart',                     arr:  146249.43, industry: 'Retail & Consumer',     col: 'triage' },
+    { id: 18, name: 'T-Mobile USA',                arr:  141200.00, industry: 'Telecom & Media',       col: 'triage' },
+    { id: 19, name: 'Comcast',                     arr:  196516.09, industry: 'Telecom & Media',       col: 'triage' },
+    { id: 20, name: 'Tesla',                       arr:  138034.50, industry: 'Automotive',            col: 'triage' },
+    { id: 21, name: 'US Dept of Agriculture',      arr:  136199.25, industry: 'Defense & Gov',         col: 'triage' },
+    { id: 22, name: 'Sony Corporation of America', arr:  135220.75, industry: 'Telecom & Media',       col: 'triage' },
+    { id: 23, name: 'CrowdStrike',                 arr:  129243.00, industry: 'Technology',            col: 'triage' },
+    { id: 24, name: 'Express Scripts',             arr:  128480.00, industry: 'Healthcare',            col: 'triage' },
+    { id: 25, name: 'SpaceX',                      arr:  124058.25, industry: 'Aerospace',             col: 'triage' },
+    { id: 26, name: 'Verizon',                     arr:  123167.25, industry: 'Telecom & Media',       col: 'triage' },
+    { id: 27, name: 'Palantir Technologies',       arr:  122233.50, industry: 'Technology',            col: 'triage' },
+    { id: 28, name: 'U.S. Army',                   arr:  117127.59, industry: 'Defense & Gov',         col: 'triage' },
+    { id: 29, name: 'General Dynamics IT (GDIT)',  arr:  114400.00, industry: 'Defense & Gov',         col: 'triage' },
+    { id: 30, name: 'Verisk Analytics',            arr:  111110.40, industry: 'Financial Services',    col: 'triage' },
+    { id: 31, name: 'Desjardins Technology Group', arr:  110767.18, industry: 'Financial Services',    col: 'triage' },
+    { id: 32, name: 'AT&T Services',               arr:  108310.75, industry: 'Telecom & Media',       col: 'triage' },
+    { id: 33, name: 'Samsung Electronics',         arr:  107775.01, industry: 'Technology',            col: 'triage' },
+    { id: 34, name: 'Discover Financial Services', arr:  106852.50, industry: 'Financial Services',    col: 'triage' },
+    { id: 35, name: 'Kaiser Permanente',           arr:  104654.70, industry: 'Healthcare',            col: 'triage' },
+    { id: 36, name: 'Red Hat',                     arr:  101840.00, industry: 'Technology',            col: 'triage' },
+    { id: 37, name: 'Spotify',                     arr:  100800.00, industry: 'Telecom & Media',       col: 'triage' },
+    { id: 38, name: 'FIS Global',                  arr:   99510.00, industry: 'Financial Services',    col: 'triage' },
+    { id: 39, name: 'US Dept of Energy',           arr:   98435.17, industry: 'Defense & Gov',         col: 'triage' },
+    { id: 40, name: 'FBI',                         arr:   96426.00, industry: 'Defense & Gov',         col: 'triage' },
+    { id: 41, name: 'Applied Materials',           arr:   94672.77, industry: 'Technology',            col: 'triage' },
+    { id: 42, name: 'AbbVie',                      arr:   93150.25, industry: 'Healthcare',            col: 'triage' },
+    { id: 43, name: 'Mutual of Omaha',             arr:   88017.75, industry: 'Financial Services',    col: 'triage' },
+    { id: 44, name: 'SAS Institute',               arr:   85705.50, industry: 'Technology',            col: 'triage' },
+    { id: 45, name: 'The Kroger Company',          arr:   82280.00, industry: 'Retail & Consumer',     col: 'triage' },
+    { id: 46, name: 'PNC',                         arr:   80540.25, industry: 'Financial Services',    col: 'triage' },
+    { id: 47, name: 'Google',                      arr:   77601.75, industry: 'Technology',            col: 'triage' },
+    { id: 48, name: 'Cyberspace',                  arr:   75574.50, industry: 'Defense & Gov',         col: 'triage' },
+    { id: 49, name: 'FISERV',                      arr:   75378.86, industry: 'Financial Services',    col: 'triage' },
+    { id: 50, name: 'Maryland Procurement Office', arr:   14881.50, industry: 'Defense & Gov',         col: 'triage' },
   ];
 
   // ─────────────────────────────────────────────────────
   //  Helpers
   // ─────────────────────────────────────────────────────
   function fmt(n) {
-    if (n >= 1000000) return '$' + (n / 1000000).toFixed(1) + 'M';
-    return '$' + Math.round(n / 1000) + 'K';
+    if (n >= 1000000) return '$' + (n / 1000000).toFixed(2) + 'M';
+    if (n >= 1000)    return '$' + (n / 1000).toFixed(1) + 'K';
+    return '$' + Math.round(n);
   }
 
   function colAccounts(colId) {
@@ -504,6 +504,10 @@
   // ─────────────────────────────────────────────────────
   function render() {
     loadState();
+
+    const totalArr = ACCOUNTS.reduce((s, a) => s + a.arr, 0);
+    document.getElementById('hd-arr').textContent = fmt(totalArr);
+    document.getElementById('hd-count').textContent = ACCOUNTS.length;
 
     const board = document.getElementById('board');
     board.innerHTML = '';
