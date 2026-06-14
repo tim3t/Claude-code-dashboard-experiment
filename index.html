@@ -271,6 +271,122 @@
       background: rgba(100,116,139,0.06);
       border-radius: 6px;
     }
+
+    /* ── Contact section ── */
+    .contact-section {
+      margin-top: 8px;
+      padding-top: 7px;
+      border-top: 1px solid #f0f4f8;
+    }
+
+    .contact-add-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 11px;
+      color: #94a3b8;
+      padding: 0;
+      text-align: left;
+      width: 100%;
+      font-family: inherit;
+    }
+
+    .contact-add-btn:hover { color: #64748b; }
+
+    .contact-view {
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .contact-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .contact-name {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #334155;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .contact-email {
+      font-size: 10.5px;
+      color: #64748b;
+      text-decoration: none;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .contact-email:hover { color: #2563eb; text-decoration: underline; }
+
+    .contact-actions {
+      display: flex;
+      gap: 1px;
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity 0.1s;
+    }
+
+    .card:hover .contact-actions { opacity: 1; }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #94a3b8;
+      font-size: 13px;
+      padding: 1px 4px;
+      border-radius: 3px;
+      line-height: 1.4;
+      font-family: inherit;
+    }
+
+    .icon-btn:hover { background: #f1f5f9; color: #475569; }
+
+    .contact-edit { display: flex; flex-direction: column; gap: 5px; }
+
+    .contact-input {
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 5px 7px;
+      font-size: 11.5px;
+      font-family: inherit;
+      width: 100%;
+      outline: none;
+      color: #1e293b;
+      background: #f8fafc;
+    }
+
+    .contact-input:focus {
+      border-color: #2563eb;
+      background: white;
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.12);
+    }
+
+    .contact-btns { display: flex; gap: 5px; }
+
+    .btn-save, .btn-cancel {
+      flex: 1;
+      padding: 4px 0;
+      border: none;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-save  { background: #2563eb; color: white; }
+    .btn-save:hover  { background: #1d4ed8; }
+    .btn-cancel { background: #e2e8f0; color: #475569; }
+    .btn-cancel:hover { background: #cbd5e1; }
   </style>
 </head>
 <body>
@@ -406,6 +522,96 @@
   // ─────────────────────────────────────────────────────
   const LS_KEY = 'csm-kanban-v2';
 
+  // ─────────────────────────────────────────────────────
+  //  Contacts  (stored separately so column moves don't clobber them)
+  // ─────────────────────────────────────────────────────
+  const CONTACTS = {};
+  const CONTACTS_KEY = 'csm-contacts-v1';
+
+  function loadContacts() {
+    try {
+      const saved = localStorage.getItem(CONTACTS_KEY);
+      if (saved) Object.assign(CONTACTS, JSON.parse(saved));
+    } catch (_) {}
+  }
+
+  function saveContacts() {
+    localStorage.setItem(CONTACTS_KEY, JSON.stringify(CONTACTS));
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function renderContact(section, accId) {
+    const c = CONTACTS[accId];
+    if (c) {
+      section.innerHTML = `
+        <div class="contact-view">
+          <div class="contact-info">
+            <span class="contact-name">${esc(c.name)}</span>
+            <a class="contact-email" href="mailto:${esc(c.email)}">${esc(c.email)}</a>
+          </div>
+          <div class="contact-actions">
+            <button class="icon-btn" data-action="edit"   title="Edit contact">✎</button>
+            <button class="icon-btn" data-action="remove" title="Remove contact">×</button>
+          </div>
+        </div>`;
+      section.querySelector('[data-action="edit"]').addEventListener('click', e => {
+        e.stopPropagation();
+        showContactForm(section, accId, c.name, c.email);
+      });
+      section.querySelector('[data-action="remove"]').addEventListener('click', e => {
+        e.stopPropagation();
+        delete CONTACTS[accId];
+        saveContacts();
+        renderContact(section, accId);
+      });
+    } else {
+      section.innerHTML = `<button class="contact-add-btn">+ Add contact</button>`;
+      section.querySelector('.contact-add-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        showContactForm(section, accId, '', '');
+      });
+    }
+  }
+
+  function showContactForm(section, accId, name, email) {
+    section.innerHTML = `
+      <div class="contact-edit">
+        <input class="contact-input" type="text"  placeholder="Name"          value="${esc(name)}" />
+        <input class="contact-input" type="email" placeholder="Email address" value="${esc(email)}" />
+        <div class="contact-btns">
+          <button class="btn-save">Save</button>
+          <button class="btn-cancel">Cancel</button>
+        </div>
+      </div>`;
+
+    const nameEl  = section.querySelector('input[type="text"]');
+    const emailEl = section.querySelector('input[type="email"]');
+    nameEl.focus();
+
+    function doSave() {
+      const n  = nameEl.value.trim();
+      const em = emailEl.value.trim();
+      if (n || em) { CONTACTS[accId] = { name: n, email: em }; saveContacts(); }
+      renderContact(section, accId);
+    }
+
+    section.querySelector('.btn-save').addEventListener('click',   e => { e.stopPropagation(); doSave(); });
+    section.querySelector('.btn-cancel').addEventListener('click', e => { e.stopPropagation(); renderContact(section, accId); });
+
+    [nameEl, emailEl].forEach(el => {
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter')  { e.stopPropagation(); doSave(); }
+        if (e.key === 'Escape') { e.stopPropagation(); renderContact(section, accId); }
+      });
+      el.addEventListener('mousedown', e => e.stopPropagation());
+    });
+  }
+
   function loadState() {
     try {
       const saved = localStorage.getItem(LS_KEY);
@@ -460,6 +666,12 @@
         <span class="card-arr">${fmt(acc.arr)}</span>
         <span class="industry-badge" style="background:${badgeColor}" title="${acc.industry}">${acc.industry}</span>
       </div>`;
+
+    const contactSection = document.createElement('div');
+    contactSection.className = 'contact-section';
+    card.appendChild(contactSection);
+    renderContact(contactSection, acc.id);
+
     return card;
   }
 
@@ -504,6 +716,7 @@
   // ─────────────────────────────────────────────────────
   function render() {
     loadState();
+    loadContacts();
 
     const totalArr = ACCOUNTS.reduce((s, a) => s + a.arr, 0);
     document.getElementById('hd-arr').textContent = fmt(totalArr);
@@ -517,11 +730,13 @@
       const el = document.getElementById('col-' + colDef.id);
 
       Sortable.create(el, {
-        group:       'accounts',
-        animation:   150,
-        ghostClass:  'sortable-ghost',
-        chosenClass: 'sortable-chosen',
-        draggable:   '.card',
+        group:           'accounts',
+        animation:       150,
+        ghostClass:      'sortable-ghost',
+        chosenClass:     'sortable-chosen',
+        draggable:       '.card',
+        filter:          '.contact-section',
+        preventOnFilter: false,
 
         onAdd(evt) {
           const id  = parseInt(evt.item.dataset.id);
