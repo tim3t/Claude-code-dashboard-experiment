@@ -397,6 +397,110 @@
     .btn-save:hover   { background: #4f46e5; }
     .btn-cancel { background: #f1f5f9; color: #475569; }
     .btn-cancel:hover { background: #e2e8f0; }
+
+    /* ── Column drag-to-reorder ── */
+    .column-header { cursor: grab; user-select: none; }
+    .column-header:active { cursor: grabbing; }
+
+    .column.column-ghost   { opacity: 0.3; }
+    .column.column-chosen  {
+      box-shadow: 0 20px 50px rgba(0,0,0,0.18);
+      transform: rotate(0.5deg);
+    }
+
+    /* ── Add column button ── */
+    .add-col-btn {
+      width: 200px;
+      flex-shrink: 0;
+      height: calc(100vh - 3px - 58px - 32px);
+      border: 2px dashed #cbd5e1;
+      border-radius: 12px;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 8px;
+      color: #94a3b8;
+      font-size: 13px;
+      font-family: inherit;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      align-self: flex-start;
+    }
+
+    .add-col-btn:hover {
+      border-color: #6366f1;
+      color: #6366f1;
+      background: rgba(99,102,241,0.04);
+    }
+
+    .add-col-btn .plus-icon { font-size: 22px; font-weight: 300; line-height: 1; }
+
+    /* ── Add column form ── */
+    .add-col-form {
+      width: 224px;
+      flex-shrink: 0;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1), 0 1px 4px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.07);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-self: flex-start;
+    }
+
+    .add-col-form-title { font-size: 13px; font-weight: 700; color: #0f172a; }
+
+    .col-name-input {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-family: inherit;
+      width: 100%;
+      outline: none;
+      color: #1e293b;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .col-name-input:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    }
+
+    .color-swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .color-swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.1s;
+      flex-shrink: 0;
+    }
+
+    .color-swatch.selected { outline: 3px solid #6366f1; outline-offset: 2px; }
+    .color-swatch:hover { transform: scale(1.15); }
+
+    .col-form-btns { display: flex; gap: 6px; }
+
+    .btn-add-col {
+      flex: 1; padding: 7px 0; border: none; border-radius: 7px;
+      font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+      background: #6366f1; color: white; transition: background 0.12s;
+    }
+    .btn-add-col:hover { background: #4f46e5; }
+
+    .btn-cancel-col {
+      flex: 1; padding: 7px 0; border: none; border-radius: 7px;
+      font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+      background: #f1f5f9; color: #475569; transition: background 0.12s;
+    }
+    .btn-cancel-col:hover { background: #e2e8f0; }
   </style>
 </head>
 <body>
@@ -427,7 +531,7 @@
   // ─────────────────────────────────────────────────────
   //  Column definitions
   // ─────────────────────────────────────────────────────
-  const COLUMNS = [
+  const DEFAULT_COLUMNS = [
     { id: 'triage',        label: 'To Triage',             color: '#475569', icon: '◎' },
     { id: 'engaged',       label: 'Actively Engaged',       color: '#16a34a', icon: '●' },
     { id: 'migration',     label: 'Migration / Project',    color: '#2563eb', icon: '↻' },
@@ -437,6 +541,7 @@
     { id: 'dormant',       label: 'Dormant',                color: '#6b7280', icon: '○' },
     { id: 'at-risk',       label: 'At Risk',                color: '#dc2626', icon: '▲' },
   ];
+  let COLUMNS = DEFAULT_COLUMNS.map(c => ({...c}));
 
   // ─────────────────────────────────────────────────────
   //  Industry → badge color
@@ -530,7 +635,43 @@
   // ─────────────────────────────────────────────────────
   //  localStorage persistence
   // ─────────────────────────────────────────────────────
-  const LS_KEY = 'csm-kanban-v2';
+  const LS_KEY      = 'csm-kanban-v2';
+  const COLUMNS_KEY = 'csm-columns-v1';
+
+  const COL_COLORS = [
+    '#475569','#16a34a','#2563eb','#7c3aed',
+    '#0891b2','#d97706','#dc2626','#ec4899',
+    '#059669','#f97316','#8b5cf6','#0ea5e9',
+  ];
+
+  function loadColumns() {
+    COLUMNS = DEFAULT_COLUMNS.map(c => ({...c}));
+    try {
+      const data = JSON.parse(localStorage.getItem(COLUMNS_KEY));
+      if (!data) return;
+      if (data.custom) {
+        data.custom.forEach(c => {
+          if (!COLUMNS.find(col => col.id === c.id)) COLUMNS.push({...c, isCustom: true});
+        });
+      }
+      if (data.order) {
+        const reordered = [];
+        data.order.forEach(id => {
+          const col = COLUMNS.find(c => c.id === id);
+          if (col) reordered.push(col);
+        });
+        COLUMNS.forEach(c => { if (!reordered.find(r => r.id === c.id)) reordered.push(c); });
+        COLUMNS = reordered;
+      }
+    } catch (_) {}
+  }
+
+  function saveColumns() {
+    localStorage.setItem(COLUMNS_KEY, JSON.stringify({
+      order:  COLUMNS.map(c => c.id),
+      custom: COLUMNS.filter(c => c.isCustom),
+    }));
+  }
 
   // ─────────────────────────────────────────────────────
   //  Contacts  (stored separately so column moves don't clobber them)
@@ -627,7 +768,10 @@
       const saved = localStorage.getItem(LS_KEY);
       if (!saved) return;
       const map = JSON.parse(saved);
-      ACCOUNTS.forEach(a => { if (map[a.id]) a.col = map[a.id]; });
+      ACCOUNTS.forEach(a => {
+        const colId = map[a.id];
+        if (colId && COLUMNS.find(c => c.id === colId)) a.col = colId;
+      });
     } catch (_) {}
   }
 
@@ -691,6 +835,7 @@
 
     const col = document.createElement('div');
     col.className = 'column';
+    col.dataset.colId = colDef.id;
 
     const hdr = document.createElement('div');
     hdr.className = 'column-header';
@@ -722,9 +867,70 @@
   }
 
   // ─────────────────────────────────────────────────────
+  //  Add-column UI
+  // ─────────────────────────────────────────────────────
+  function makeAddColButton(board) {
+    const btn = document.createElement('button');
+    btn.className = 'add-col-btn';
+    btn.innerHTML = '<span class="plus-icon">+</span><span>Add column</span>';
+    btn.addEventListener('click', () => showAddColForm(board, btn));
+    return btn;
+  }
+
+  function showAddColForm(board, btn) {
+    btn.remove();
+    let selectedColor = COL_COLORS[0];
+
+    const form = document.createElement('div');
+    form.className = 'add-col-form';
+    form.innerHTML = `
+      <div class="add-col-form-title">New column</div>
+      <input class="col-name-input" type="text" placeholder="Column name" maxlength="32" />
+      <div class="color-swatches">
+        ${COL_COLORS.map((c, i) =>
+          `<div class="color-swatch${i === 0 ? ' selected' : ''}" data-color="${c}" style="background:${c}"></div>`
+        ).join('')}
+      </div>
+      <div class="col-form-btns">
+        <button class="btn-add-col">Add</button>
+        <button class="btn-cancel-col">Cancel</button>
+      </div>`;
+
+    board.appendChild(form);
+
+    const nameInput = form.querySelector('.col-name-input');
+    nameInput.focus();
+
+    form.querySelectorAll('.color-swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        form.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+        sw.classList.add('selected');
+        selectedColor = sw.dataset.color;
+      });
+    });
+
+    function doAdd() {
+      const label = nameInput.value.trim();
+      if (!label) { nameInput.focus(); return; }
+      const newCol = { id: 'custom-' + Date.now(), label, color: selectedColor, icon: '◈', isCustom: true };
+      COLUMNS.push(newCol);
+      saveColumns();
+      render();
+    }
+
+    form.querySelector('.btn-add-col').addEventListener('click', doAdd);
+    form.querySelector('.btn-cancel-col').addEventListener('click', render);
+    nameInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter')  doAdd();
+      if (e.key === 'Escape') render();
+    });
+  }
+
+  // ─────────────────────────────────────────────────────
   //  Render + init Sortable
   // ─────────────────────────────────────────────────────
   function render() {
+    loadColumns();
     loadState();
     loadContacts();
 
@@ -765,6 +971,21 @@
           saveState();
         },
       });
+    });
+
+    board.appendChild(makeAddColButton(board));
+
+    Sortable.create(board, {
+      animation:   200,
+      handle:      '.column-header',
+      draggable:   '.column',
+      ghostClass:  'column-ghost',
+      chosenClass: 'column-chosen',
+      onEnd() {
+        const newOrder = [...board.querySelectorAll('.column[data-col-id]')].map(el => el.dataset.colId);
+        COLUMNS = newOrder.map(id => COLUMNS.find(c => c.id === id)).filter(Boolean);
+        saveColumns();
+      },
     });
   }
 
