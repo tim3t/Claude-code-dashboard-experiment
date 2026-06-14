@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSM Account Dashboard — Adaptavist</title>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: #f1f5f9;
+      color: #1e293b;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #0f172a;
+      color: white;
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .brand-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: -0.2px;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: #475569;
+      margin-top: 1px;
+    }
+
+    .h-divider {
+      width: 1px;
+      height: 28px;
+      background: #1e293b;
+      flex-shrink: 0;
+    }
+
+    .header-stats {
+      display: flex;
+      gap: 28px;
+      margin-left: auto;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .stat-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: #e2e8f0;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      margin-top: 3px;
+    }
+
+    /* ── Board ── */
+    .board-wrap {
+      flex: 1;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .board-wrap::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .board-wrap::-webkit-scrollbar-track {
+      background: #e2e8f0;
+    }
+
+    .board-wrap::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border-radius: 4px;
+    }
+
+    .board {
+      display: flex;
+      gap: 10px;
+      padding: 14px 16px 14px;
+      height: 100%;
+      align-items: flex-start;
+      min-width: max-content;
+    }
+
+    /* ── Column ── */
+    .column {
+      width: 232px;
+      flex-shrink: 0;
+      background: #dde3ec;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 60px - 28px);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .column-header {
+      padding: 11px 13px 10px;
+      border-radius: 10px 10px 0 0;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .col-top {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .col-icon {
+      font-size: 13px;
+      width: 16px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .col-title {
+      font-size: 12px;
+      font-weight: 600;
+      flex: 1;
+      letter-spacing: 0.15px;
+    }
+
+    .col-count {
+      background: rgba(255,255,255,0.24);
+      border-radius: 9px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .col-arr {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.72);
+      margin-top: 5px;
+      padding-left: 23px;
+      letter-spacing: 0.1px;
+    }
+
+    /* ── Cards container ── */
+    .column-cards {
+      padding: 7px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 60px;
+    }
+
+    .column-cards::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .column-cards::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .column-cards::-webkit-scrollbar-thumb {
+      background: #b0bec5;
+      border-radius: 2px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: white;
+      border-radius: 7px;
+      padding: 10px 12px;
+      cursor: grab;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.07), 0 1px 1px rgba(0,0,0,0.04);
+      transition: box-shadow 0.12s ease, transform 0.12s ease;
+      user-select: none;
+      border-left: 3px solid transparent;
+    }
+
+    .card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      transform: translateY(-1px);
+    }
+
+    .card.sortable-chosen {
+      cursor: grabbing !important;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+      transform: rotate(1.5deg) scale(1.02);
+    }
+
+    .card.sortable-ghost {
+      opacity: 0.28;
+    }
+
+    .card-name {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #0f172a;
+      line-height: 1.35;
+      margin-bottom: 7px;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .card-arr {
+      font-size: 12px;
+      font-weight: 700;
+      color: #334155;
+      flex-shrink: 0;
+    }
+
+    .industry-badge {
+      font-size: 9.5px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: white;
+      white-space: nowrap;
+      opacity: 0.88;
+      max-width: 128px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ── Empty state ── */
+    .empty-drop-zone {
+      flex: 1;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed #cbd5e1;
+      border-radius: 6px;
+      color: #94a3b8;
+      font-size: 11.5px;
+      font-style: italic;
+      pointer-events: none;
+      margin: 2px;
+    }
+
+    /* ── Highlight column on drag-over ── */
+    .column-cards.sortable-drag-over {
+      background: rgba(100,116,139,0.06);
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="brand-name">Account Dashboard</div>
+    <div class="brand-sub">Adaptavist · Senior CSM · Book of Business</div>
+  </div>
+  <div class="h-divider"></div>
+  <div class="header-stats">
+    <div class="stat">
+      <div class="stat-value" id="hd-count">53</div>
+      <div class="stat-label">Accounts</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="hd-arr">$8.5M</div>
+      <div class="stat-label">Annual ARR</div>
+    </div>
+  </div>
+</header>
+
+<div class="board-wrap">
+  <div class="board" id="board"></div>
+</div>
+
+<script>
+  // ─────────────────────────────────────────────────────
+  //  Column definitions
+  // ─────────────────────────────────────────────────────
+  const COLUMNS = [
+    { id: 'triage',        label: 'To Triage',             color: '#475569', icon: '◎' },
+    { id: 'engaged',       label: 'Actively Engaged',       color: '#16a34a', icon: '●' },
+    { id: 'migration',     label: 'Migration / Project',    color: '#2563eb', icon: '↻' },
+    { id: 'feature-watch', label: 'Feature Watch',          color: '#7c3aed', icon: '◉' },
+    { id: 'rel-building',  label: 'Relationship Building',  color: '#0891b2', icon: '◐' },
+    { id: 'no-contact',    label: 'No Key Contact',         color: '#d97706', icon: '!' },
+    { id: 'dormant',       label: 'Dormant',                color: '#6b7280', icon: '○' },
+    { id: 'at-risk',       label: 'At Risk',                color: '#dc2626', icon: '▲' },
+  ];
+
+  // ─────────────────────────────────────────────────────
+  //  Industry → badge color
+  // ─────────────────────────────────────────────────────
+  const INDUSTRY_COLOR = {
+    'Financial Services':    '#1e40af',
+    'Technology':            '#6d28d9',
+    'Healthcare':            '#065f46',
+    'Defense & Gov':         '#92400e',
+    'Manufacturing':         '#374151',
+    'Professional Services': '#0e7490',
+    'Telecom & Media':       '#9d174d',
+    'Energy':                '#166534',
+    'Transportation':        '#5b21b6',
+  };
+
+  // ─────────────────────────────────────────────────────
+  //  Accounts  (53 total · $8.48M ARR)
+  // ─────────────────────────────────────────────────────
+  const ACCOUNTS = [
+    // ── To Triage (newly inherited — haven't assessed yet)
+    { id:  1, name: 'Bank of America',            arr: 252000, industry: 'Financial Services',    col: 'triage' },
+    { id:  2, name: 'Boeing Defense',             arr: 220000, industry: 'Defense & Gov',         col: 'triage' },
+    { id:  3, name: 'Capital One',                arr: 170000, industry: 'Financial Services',    col: 'triage' },
+    { id:  4, name: 'Cisco Systems',              arr: 189000, industry: 'Technology',            col: 'triage' },
+    { id:  5, name: 'Deloitte LLP',               arr: 181000, industry: 'Professional Services', col: 'triage' },
+    { id:  6, name: 'Deutsche Bank',              arr: 150000, industry: 'Financial Services',    col: 'triage' },
+    { id:  7, name: 'EY Global',                  arr: 165000, industry: 'Professional Services', col: 'triage' },
+    { id:  8, name: 'FedEx Corporation',          arr: 130000, industry: 'Transportation',        col: 'triage' },
+    { id:  9, name: 'General Dynamics',           arr: 205000, industry: 'Defense & Gov',         col: 'triage' },
+    { id: 10, name: 'General Electric',           arr: 169000, industry: 'Manufacturing',         col: 'triage' },
+    { id: 11, name: 'Goldman Sachs',              arr: 228000, industry: 'Financial Services',    col: 'triage' },
+    { id: 12, name: 'Hewlett Packard Enterprise', arr: 138000, industry: 'Technology',            col: 'triage' },
+    { id: 13, name: 'Honeywell International',    arr: 146000, industry: 'Manufacturing',         col: 'triage' },
+    { id: 14, name: 'HSBC Holdings',              arr: 181000, industry: 'Financial Services',    col: 'triage' },
+    { id: 15, name: 'IBM Corporation',            arr: 244000, industry: 'Technology',            col: 'triage' },
+    { id: 16, name: 'ING Group',                  arr: 110000, industry: 'Financial Services',    col: 'triage' },
+    { id: 17, name: 'Johnson Controls',           arr: 114000, industry: 'Manufacturing',         col: 'triage' },
+    { id: 18, name: 'ManTech International',      arr:  91000, industry: 'Defense & Gov',         col: 'triage' },
+    { id: 19, name: 'MetLife Insurance',          arr: 114000, industry: 'Financial Services',    col: 'triage' },
+    { id: 20, name: 'Motorola Solutions',         arr: 102000, industry: 'Technology',            col: 'triage' },
+    // ── Actively Engaged
+    { id: 21, name: 'JPMorgan Chase',             arr: 224000, industry: 'Financial Services',    col: 'engaged' },
+    { id: 22, name: 'Lockheed Martin',            arr: 244000, industry: 'Defense & Gov',         col: 'engaged' },
+    { id: 23, name: 'Morgan Stanley',             arr: 209000, industry: 'Financial Services',    col: 'engaged' },
+    { id: 24, name: 'Northrop Grumman',           arr: 224000, industry: 'Defense & Gov',         col: 'engaged' },
+    { id: 25, name: 'Pfizer Inc',                 arr: 181000, industry: 'Healthcare',            col: 'engaged' },
+    { id: 26, name: 'Raytheon Technologies',      arr: 213000, industry: 'Defense & Gov',         col: 'engaged' },
+    { id: 27, name: 'UnitedHealth Group',         arr: 197000, industry: 'Healthcare',            col: 'engaged' },
+    { id: 28, name: 'Wells Fargo & Co',           arr: 201000, industry: 'Financial Services',    col: 'engaged' },
+    // ── Migration / Project
+    { id: 29, name: 'AstraZeneca',                arr: 193000, industry: 'Healthcare',            col: 'migration' },
+    { id: 30, name: 'Broadcom Inc',               arr: 154000, industry: 'Technology',            col: 'migration' },
+    { id: 31, name: 'Caterpillar Inc',            arr: 126000, industry: 'Manufacturing',         col: 'migration' },
+    { id: 32, name: 'Chevron Corporation',        arr: 138000, industry: 'Energy',                col: 'migration' },
+    { id: 33, name: 'Cognizant Technology',       arr: 114000, industry: 'Professional Services', col: 'migration' },
+    { id: 34, name: 'DXC Technology',             arr: 122000, industry: 'Technology',            col: 'migration' },
+    // ── Feature Watch
+    { id: 35, name: 'Ford Motor Company',         arr: 154000, industry: 'Manufacturing',         col: 'feature-watch' },
+    { id: 36, name: 'Intel Corporation',          arr: 161000, industry: 'Technology',            col: 'feature-watch' },
+    { id: 37, name: 'Oracle Corporation',         arr: 138000, industry: 'Technology',            col: 'feature-watch' },
+    { id: 38, name: 'Salesforce Inc',             arr: 126000, industry: 'Technology',            col: 'feature-watch' },
+    // ── Relationship Building
+    { id: 39, name: 'Accenture Federal Services', arr: 122000, industry: 'Professional Services', col: 'rel-building' },
+    { id: 40, name: 'McKinsey & Company',         arr: 138000, industry: 'Professional Services', col: 'rel-building' },
+    { id: 41, name: 'Merck & Co',                 arr: 146000, industry: 'Healthcare',            col: 'rel-building' },
+    { id: 42, name: 'Microsoft (Productivity)',   arr: 154000, industry: 'Technology',            col: 'rel-building' },
+    { id: 43, name: 'PricewaterhouseCoopers',     arr: 150000, industry: 'Professional Services', col: 'rel-building' },
+    { id: 44, name: 'SAP SE',                     arr: 114000, industry: 'Technology',            col: 'rel-building' },
+    // ── No Key Contact
+    { id: 45, name: 'Siemens AG',                 arr: 165000, industry: 'Manufacturing',         col: 'no-contact' },
+    { id: 46, name: 'Tata Consultancy Services',  arr: 146000, industry: 'Professional Services', col: 'no-contact' },
+    { id: 47, name: 'Thales Group',               arr: 122000, industry: 'Defense & Gov',         col: 'no-contact' },
+    { id: 48, name: 'Thomson Reuters',            arr: 150000, industry: 'Professional Services', col: 'no-contact' },
+    // ── Dormant
+    { id: 49, name: 'US Bank',                    arr: 130000, industry: 'Financial Services',    col: 'dormant' },
+    { id: 50, name: 'Verizon Business',           arr: 169000, industry: 'Telecom & Media',       col: 'dormant' },
+    { id: 51, name: 'Visa Inc',                   arr: 146000, industry: 'Financial Services',    col: 'dormant' },
+    // ── At Risk
+    { id: 52, name: 'State Farm Mutual',          arr: 110000, industry: 'Financial Services',    col: 'at-risk' },
+    { id: 53, name: 'Wipro Limited',              arr: 102000, industry: 'Professional Services', col: 'at-risk' },
+  ];
+
+  // ─────────────────────────────────────────────────────
+  //  Helpers
+  // ─────────────────────────────────────────────────────
+  function fmt(n) {
+    if (n >= 1000000) return '$' + (n / 1000000).toFixed(1) + 'M';
+    return '$' + Math.round(n / 1000) + 'K';
+  }
+
+  function colAccounts(colId) {
+    return ACCOUNTS.filter(a => a.col === colId);
+  }
+
+  function colArr(colId) {
+    return colAccounts(colId).reduce((s, a) => s + a.arr, 0);
+  }
+
+  // ─────────────────────────────────────────────────────
+  //  localStorage persistence
+  // ─────────────────────────────────────────────────────
+  const LS_KEY = 'csm-kanban-v1';
+
+  function loadState() {
+    try {
+      const saved = localStorage.getItem(LS_KEY);
+      if (!saved) return;
+      const map = JSON.parse(saved);
+      ACCOUNTS.forEach(a => { if (map[a.id]) a.col = map[a.id]; });
+    } catch (_) {}
+  }
+
+  function saveState() {
+    const map = {};
+    ACCOUNTS.forEach(a => { map[a.id] = a.col; });
+    localStorage.setItem(LS_KEY, JSON.stringify(map));
+  }
+
+  // ─────────────────────────────────────────────────────
+  //  DOM helpers
+  // ─────────────────────────────────────────────────────
+  function updateColMeta(colId) {
+    const accs = colAccounts(colId);
+    const countEl = document.getElementById('count-' + colId);
+    const arrEl   = document.getElementById('arr-'   + colId);
+    if (countEl) countEl.textContent = accs.length;
+    if (arrEl)   arrEl.textContent   = fmt(colArr(colId));
+
+    const cardsEl = document.getElementById('col-' + colId);
+    if (!cardsEl) return;
+    const hasCards = cardsEl.querySelectorAll('.card').length > 0;
+    const emptyEl  = cardsEl.querySelector('.empty-drop-zone');
+    if (!hasCards && !emptyEl) {
+      const z = document.createElement('div');
+      z.className = 'empty-drop-zone';
+      z.textContent = 'Drop accounts here';
+      cardsEl.appendChild(z);
+    } else if (hasCards && emptyEl) {
+      emptyEl.remove();
+    }
+  }
+
+  function makeCard(acc) {
+    const colDef = COLUMNS.find(c => c.id === acc.col);
+    const borderColor = colDef ? colDef.color : '#94a3b8';
+    const badgeColor  = INDUSTRY_COLOR[acc.industry] || '#64748b';
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.id = acc.id;
+    card.style.borderLeftColor = borderColor;
+    card.innerHTML = `
+      <div class="card-name">${acc.name}</div>
+      <div class="card-footer">
+        <span class="card-arr">${fmt(acc.arr)}</span>
+        <span class="industry-badge" style="background:${badgeColor}" title="${acc.industry}">${acc.industry}</span>
+      </div>`;
+    return card;
+  }
+
+  function makeColumn(colDef) {
+    const accs    = colAccounts(colDef.id);
+    const arrVal  = colArr(colDef.id);
+
+    const col = document.createElement('div');
+    col.className = 'column';
+
+    const hdr = document.createElement('div');
+    hdr.className = 'column-header';
+    hdr.style.background = colDef.color;
+    hdr.innerHTML = `
+      <div class="col-top">
+        <span class="col-icon">${colDef.icon}</span>
+        <span class="col-title">${colDef.label}</span>
+        <span class="col-count" id="count-${colDef.id}">${accs.length}</span>
+      </div>
+      <div class="col-arr" id="arr-${colDef.id}">${fmt(arrVal)}</div>`;
+
+    const cards = document.createElement('div');
+    cards.className = 'column-cards';
+    cards.id = 'col-' + colDef.id;
+
+    accs.forEach(a => cards.appendChild(makeCard(a)));
+
+    if (accs.length === 0) {
+      const z = document.createElement('div');
+      z.className = 'empty-drop-zone';
+      z.textContent = 'Drop accounts here';
+      cards.appendChild(z);
+    }
+
+    col.appendChild(hdr);
+    col.appendChild(cards);
+    return col;
+  }
+
+  // ─────────────────────────────────────────────────────
+  //  Render + init Sortable
+  // ─────────────────────────────────────────────────────
+  function render() {
+    loadState();
+
+    const board = document.getElementById('board');
+    board.innerHTML = '';
+    COLUMNS.forEach(c => board.appendChild(makeColumn(c)));
+
+    COLUMNS.forEach(colDef => {
+      const el = document.getElementById('col-' + colDef.id);
+
+      Sortable.create(el, {
+        group:       'accounts',
+        animation:   150,
+        ghostClass:  'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        draggable:   '.card',
+
+        onAdd(evt) {
+          const id  = parseInt(evt.item.dataset.id);
+          const acc = ACCOUNTS.find(a => a.id === id);
+          if (!acc) return;
+
+          const oldColId = evt.from.id.replace('col-', '');
+          acc.col = colDef.id;
+
+          // Update card's left-border to match new column
+          const newColDef = COLUMNS.find(c => c.id === colDef.id);
+          evt.item.style.borderLeftColor = newColDef ? newColDef.color : '#94a3b8';
+
+          updateColMeta(oldColId);
+          updateColMeta(colDef.id);
+          saveState();
+        },
+      });
+    });
+  }
+
+  render();
+</script>
+</body>
+</html>
