@@ -501,6 +501,103 @@
       background: #f1f5f9; color: #475569; transition: background 0.12s;
     }
     .btn-cancel-col:hover { background: #e2e8f0; }
+
+    /* ── GitHub sync status (header) ── */
+    .sync-area { display: flex; align-items: center; margin-left: 20px; }
+
+    .sync-connect-btn {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.13);
+      color: #64748b;
+      font-size: 11.5px;
+      font-family: inherit;
+      padding: 5px 11px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+    .sync-connect-btn:hover { background: rgba(255,255,255,0.13); color: #cbd5e1; }
+
+    .sync-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      padding: 4px 2px;
+    }
+
+    .sync-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .sync-dot.synced  { background: #22c55e; }
+    .sync-dot.syncing { background: #f59e0b; animation: blink 1.1s ease-in-out infinite; }
+    .sync-dot.error   { background: #ef4444; }
+
+    @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.25; } }
+
+    .sync-label { font-size: 11px; color: #475569; white-space: nowrap; }
+    .sync-indicator:hover .sync-label { color: #94a3b8; }
+
+    /* ── GitHub PAT modal ── */
+    .gh-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gh-modal {
+      background: white;
+      border-radius: 14px;
+      padding: 26px;
+      width: min(440px, 92vw);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .gh-modal-title { font-size: 15px; font-weight: 700; color: #0f172a; }
+
+    .gh-modal-desc { font-size: 12.5px; color: #64748b; line-height: 1.65; }
+
+    .gh-pat-input {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+      width: 100%;
+      outline: none;
+      color: #1e293b;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .gh-pat-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
+
+    .gh-modal-btns { display: flex; gap: 8px; align-items: center; }
+
+    .gh-btn-disconnect {
+      padding: 8px 12px; border: none; border-radius: 7px;
+      font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+      background: #fef2f2; color: #dc2626; transition: background 0.12s; margin-right: auto;
+    }
+    .gh-btn-disconnect:hover { background: #fee2e2; }
+
+    .gh-btn-save {
+      padding: 8px 18px; border: none; border-radius: 7px;
+      font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+      background: #6366f1; color: white; transition: background 0.12s;
+    }
+    .gh-btn-save:hover { background: #4f46e5; }
+
+    .gh-btn-mcancel {
+      padding: 8px 14px; border: none; border-radius: 7px;
+      font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+      background: #f1f5f9; color: #475569; transition: background 0.12s;
+    }
+    .gh-btn-mcancel:hover { background: #e2e8f0; }
   </style>
 </head>
 <body>
@@ -521,6 +618,7 @@
       <div class="stat-label">Annual ARR</div>
     </div>
   </div>
+  <div class="sync-area" id="sync-area"></div>
 </header>
 
 <div class="board-wrap">
@@ -671,6 +769,7 @@
       order:  COLUMNS.map(c => c.id),
       custom: COLUMNS.filter(c => c.isCustom),
     }));
+    schedulePush();
   }
 
   // ─────────────────────────────────────────────────────
@@ -679,15 +778,183 @@
   const CONTACTS = {};
   const CONTACTS_KEY = 'csm-contacts-v1';
 
+  // ─────────────────────────────────────────────────────
+  //  GitHub sync  (board-state.json in the repo)
+  // ─────────────────────────────────────────────────────
+  const PAT_KEY   = 'csm-gh-pat';
+  const GH_OWNER  = 'tim3t';
+  const GH_REPO   = 'Claude-code-dashboard-experiment';
+  const GH_BRANCH = 'claude/enterprise-account-kanban-0hazzq';
+  const GH_PATH   = 'board-state.json';
+
+  let ghPat     = localStorage.getItem(PAT_KEY) || '';
+  let ghFileSha = null;
+  let syncTimer = null;
+
+  function updateSyncUI(state, label) {
+    const area = document.getElementById('sync-area');
+    if (!area) return;
+    if (state === 'disconnected') {
+      area.innerHTML = `<button class="sync-connect-btn" id="sync-btn">☁ Enable cloud sync</button>`;
+      area.querySelector('#sync-btn').addEventListener('click', showPatModal);
+      return;
+    }
+    const dotClass = state === 'syncing' ? 'syncing' : state === 'synced' ? 'synced' : 'error';
+    const text = label || (state === 'syncing' ? 'Syncing…' : state === 'synced' ? 'Synced' : 'Sync error');
+    area.innerHTML = `
+      <div class="sync-indicator" id="sync-ind" title="Click to manage sync">
+        <div class="sync-dot ${dotClass}"></div>
+        <span class="sync-label">${text}</span>
+      </div>`;
+    area.querySelector('#sync-ind').addEventListener('click', showPatModal);
+  }
+
+  function showPatModal() {
+    const overlay = document.createElement('div');
+    overlay.className = 'gh-overlay';
+    overlay.innerHTML = `
+      <div class="gh-modal">
+        <div class="gh-modal-title">GitHub Cloud Sync</div>
+        <div class="gh-modal-desc">
+          Your board state (card positions, contacts, column order) will be saved to
+          <strong>board-state.json</strong> in your repository and loaded on every device
+          that opens this page.<br><br>
+          Generate a <strong>fine-grained Personal Access Token</strong> on GitHub with
+          <em>Contents → Read and Write</em> on the
+          <strong>Claude-code-dashboard-experiment</strong> repository, then paste it below.
+        </div>
+        <input class="gh-pat-input" type="password" placeholder="github_pat_…"
+               autocomplete="off" value="${esc(ghPat)}" />
+        <div class="gh-modal-btns">
+          ${ghPat ? '<button class="gh-btn-disconnect">Disconnect</button>' : ''}
+          <button class="gh-btn-mcancel">Cancel</button>
+          <button class="gh-btn-save">Save &amp; Sync</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+    const input = overlay.querySelector('.gh-pat-input');
+    input.focus(); input.select();
+
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    overlay.querySelector('.gh-btn-mcancel').addEventListener('click', () => overlay.remove());
+
+    if (ghPat) {
+      overlay.querySelector('.gh-btn-disconnect').addEventListener('click', () => {
+        ghPat = ''; ghFileSha = null;
+        localStorage.removeItem(PAT_KEY);
+        overlay.remove();
+        updateSyncUI('disconnected');
+      });
+    }
+
+    overlay.querySelector('.gh-btn-save').addEventListener('click', async () => {
+      const newPat = input.value.trim();
+      if (!newPat) { input.focus(); return; }
+      ghPat = newPat; ghFileSha = null;
+      localStorage.setItem(PAT_KEY, ghPat);
+      overlay.remove();
+      updateSyncUI('syncing');
+      try {
+        await fetchRemoteState();
+        render();
+        updateSyncUI('synced');
+      } catch (e) {
+        updateSyncUI('error', 'Auth error — check PAT');
+      }
+    });
+
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Escape') overlay.remove();
+      if (e.key === 'Enter')  overlay.querySelector('.gh-btn-save').click();
+    });
+  }
+
+  function buildState() {
+    const positions = {};
+    ACCOUNTS.forEach(a => { positions[a.id] = a.col; });
+    return {
+      v: 1,
+      positions,
+      contacts: {...CONTACTS},
+      columns: {
+        order:  COLUMNS.map(c => c.id),
+        custom: COLUMNS.filter(c => c.isCustom),
+      },
+    };
+  }
+
+  async function fetchRemoteState() {
+    const res = await fetch(
+      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}?ref=${encodeURIComponent(GH_BRANCH)}`,
+      { headers: { Authorization: `token ${ghPat}`, Accept: 'application/vnd.github+json' } }
+    );
+    if (res.status === 404) return; // file not yet created — that's fine
+    if (!res.ok) throw new Error(`GitHub ${res.status}`);
+    const data = await res.json();
+    ghFileSha = data.sha;
+    const state = JSON.parse(atob(data.content.replace(/\n/g, '')));
+    // Write into localStorage so render()'s load* functions pick it up normally
+    if (state.positions) localStorage.setItem(LS_KEY,       JSON.stringify(state.positions));
+    if (state.contacts)  localStorage.setItem(CONTACTS_KEY, JSON.stringify(state.contacts));
+    if (state.columns)   localStorage.setItem(COLUMNS_KEY,  JSON.stringify(state.columns));
+  }
+
+  async function pushRemoteState() {
+    if (!ghPat) return;
+    updateSyncUI('syncing');
+    try {
+      // Fetch SHA if we don't have it (e.g. first push after PAT entry)
+      if (!ghFileSha) {
+        const check = await fetch(
+          `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}?ref=${encodeURIComponent(GH_BRANCH)}`,
+          { headers: { Authorization: `token ${ghPat}`, Accept: 'application/vnd.github+json' } }
+        );
+        if (check.ok) ghFileSha = (await check.json()).sha;
+      }
+
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(buildState(), null, 2))));
+      const body = { message: 'csm: update board state', content, branch: GH_BRANCH };
+      if (ghFileSha) body.sha = ghFileSha;
+
+      const res = await fetch(
+        `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`,
+        {
+          method: 'PUT',
+          headers: { Authorization: `token ${ghPat}`, 'Content-Type': 'application/json', Accept: 'application/vnd.github+json' },
+          body: JSON.stringify(body),
+        }
+      );
+
+      // SHA conflict: another device pushed — refetch SHA and retry once
+      if (res.status === 409) { ghFileSha = null; await pushRemoteState(); return; }
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.message || res.status); }
+
+      ghFileSha = (await res.json()).content.sha;
+      updateSyncUI('synced');
+    } catch (e) {
+      console.error('Sync push error:', e);
+      updateSyncUI('error', 'Sync failed');
+    }
+  }
+
+  function schedulePush() {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(pushRemoteState, 2000);
+  }
+
   function loadContacts() {
     try {
       const saved = localStorage.getItem(CONTACTS_KEY);
+      // Replace (not merge) so deleted contacts don't ghost-persist
+      Object.keys(CONTACTS).forEach(k => delete CONTACTS[k]);
       if (saved) Object.assign(CONTACTS, JSON.parse(saved));
     } catch (_) {}
   }
 
   function saveContacts() {
     localStorage.setItem(CONTACTS_KEY, JSON.stringify(CONTACTS));
+    schedulePush();
   }
 
   function esc(s) {
@@ -779,6 +1046,7 @@
     const map = {};
     ACCOUNTS.forEach(a => { map[a.id] = a.col; });
     localStorage.setItem(LS_KEY, JSON.stringify(map));
+    schedulePush();
   }
 
   // ─────────────────────────────────────────────────────
@@ -927,6 +1195,22 @@
   }
 
   // ─────────────────────────────────────────────────────
+  //  Bootstrap
+  // ─────────────────────────────────────────────────────
+  async function init() {
+    updateSyncUI(ghPat ? 'syncing' : 'disconnected');
+    if (ghPat) {
+      try {
+        await fetchRemoteState();
+      } catch (e) {
+        updateSyncUI('error', 'Load error');
+      }
+    }
+    render();
+    if (ghPat) updateSyncUI('synced');
+  }
+
+  // ─────────────────────────────────────────────────────
   //  Render + init Sortable
   // ─────────────────────────────────────────────────────
   function render() {
@@ -989,7 +1273,7 @@
     });
   }
 
-  render();
+  init();
 </script>
 </body>
 </html>
